@@ -135,6 +135,7 @@ public class TMTwitter extends Plugin{
 
 					IconModel favorite = new IconModel("https://dl.dropboxusercontent.com/u/38885163/TowerMiner/plugins/TMTwitter/star_white.png");
 					favorite.setPluginInteract("TMTwitter-Fav", ""+status.getId(), "true");
+					favorite.setMouseModel(new MessageModel("Favorites: Add or Remove"));
 					if(status.isFavorited()) {
 						favorite.setImage("https://dl.dropboxusercontent.com/u/38885163/TowerMiner/plugins/TMTwitter/star_yellow.png");
 						favorite.setPluginInteract("TMTwitter-Fav", ""+status.getId(), "false");

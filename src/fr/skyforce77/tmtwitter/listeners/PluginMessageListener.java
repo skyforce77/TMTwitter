@@ -19,7 +19,6 @@ import fr.skyforce77.towerminer.api.commands.SenderType;
 import fr.skyforce77.towerminer.api.events.chat.ChatMouseHoverRenderEvent;
 import fr.skyforce77.towerminer.api.events.chat.ChatPluginActionEvent;
 import fr.skyforce77.towerminer.menus.Menu;
-import fr.skyforce77.towerminer.protocol.chat.MessageModel;
 import fr.skyforce77.towerminer.render.RenderRunnable;
 import fr.skyforce77.towerminer.ressources.RessourcesManager;
 
@@ -38,29 +37,43 @@ public class PluginMessageListener extends TMListener{
 	
 	@EventHandler
 	public void onMouseRender(ChatMouseHoverRenderEvent e) {
-		final MessageModel model = e.getModel();
-		final Menu mp = TowerMiner.menu;
-		if(e.getModel().getText().startsWith("https://twitter.com/")) {
+		
+		String link = null;
+		if(e.getMouseModel().getText().startsWith("https://twitter.com/")) {
+			link = e.getMouseModel().getText();
+		} else if(e.getChatModel().getText().startsWith("https://twitter.com/")) {
+			link = e.getChatModel().getText();
+		}
+		
+		if(link != null) {
+			final Menu mp = TowerMiner.menu;
+			final String name = link.replaceAll("https://twitter.com/", "");
+			
 			e.addRender(new RenderRunnable(true) {
 				@Override
 				public void run(Graphics2D g2d) {
 					g2d.setFont(TowerMiner.getFont(16));
 					
-					/*FontMetrics metric = g2d.getFontMetrics(g2d.getFont());
-					int hgt = metric.getHeight();
-					int adv = metric.stringWidth(model.getText());*/
-					
 					Dimension size = new Dimension(500,300);
-					try {
-						User u = null;
-						String name = model.getText().replaceAll("https://twitter.com/", "");
-						if(!users.containsKey(name)) {
-							u = TMTwitter.twitter.showUser(name);
-							users.put(name, u);
-						} else {
-							u = users.get(name);
-						}
-						
+					
+					User u = null;
+					if(!users.containsKey(name)) {
+						users.put(name, null);
+						new Thread("TMTwitter-ShowUser-"+name) {
+							public void run() {
+								try {
+									User u = TMTwitter.twitter.showUser(name);
+									users.put(name, u);
+								} catch (TwitterException e) {
+									e.printStackTrace();
+								}
+							};
+						}.start();
+					} else {
+						u = users.get(name);
+					}
+					
+					if(u != null) {
 						g2d.drawImage(RessourcesManager.getDistantImage(u.getProfileBannerURL(), "unknown"),
 								mp.Xcursor, mp.Ycursor - (int)size.getHeight() + 2, (int) (4 + size.getWidth()), (int)size.getHeight(), null);
 						g2d.setColor(new Color(0, 0, 0, 200));
@@ -88,8 +101,6 @@ public class PluginMessageListener extends TMListener{
 							g2d.setColor(Color.WHITE);
 							g2d.drawString(s, mp.Xcursor+10, mp.Ycursor - (int)size.getHeight() + 70 + y);
 						}
-					} catch (TwitterException e) {
-						e.printStackTrace();
 					}
 				}
 			});
